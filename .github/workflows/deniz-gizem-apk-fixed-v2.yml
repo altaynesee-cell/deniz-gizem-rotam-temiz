@@ -1,0 +1,71 @@
+name: Deniz Gizem APK FIX
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - ana
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+
+      - name: JDK 17 kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle 8.7 kur
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Proje zipini ac
+        shell: bash
+        run: |
+          set -euo pipefail
+          ZIP_FILE="$(find . -maxdepth 1 -type f -name '*.zip' | head -n 1)"
+          if [ -z "$ZIP_FILE" ]; then
+            echo "Repo kokunde zip dosyasi bulunamadi."
+            exit 1
+          fi
+          echo "Bulunan zip: $ZIP_FILE"
+          unzip -q "$ZIP_FILE"
+
+      - name: Android projesini bul
+        shell: bash
+        run: |
+          set -euo pipefail
+          GRADLEW_FILE="$(find . -type f -name gradlew | head -n 1)"
+          if [ -z "$GRADLEW_FILE" ]; then
+            echo "gradlew bulunamadi."
+            find . -maxdepth 4 -type f | sort
+            exit 1
+          fi
+          PROJECT_DIR="$(dirname "$GRADLEW_FILE")"
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          echo "Proje klasoru: $PROJECT_DIR"
+
+      - name: Gradle izni ver
+        shell: bash
+        run: chmod +x "$PROJECT_DIR/gradlew"
+
+      - name: APK olustur
+        shell: bash
+        run: |
+          cd "$PROJECT_DIR"
+          ./gradlew assembleDebug --stacktrace
+
+      - name: APK dosyasini yukle
+        uses: actions/upload-artifact@v4
+        with:
+          name: DenizGizemRotam-debug-apk
+          path: '**/app/build/outputs/apk/debug/app-debug.apk'
+          if-no-files-found: error

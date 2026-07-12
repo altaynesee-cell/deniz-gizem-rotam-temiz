@@ -1,0 +1,48 @@
+name: Deniz Gizem APK V6
+
+on:
+  push:
+    branches: [ "main", "master", "ana" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Depoyu al
+        uses: actions/checkout@v4
+
+      - name: JDK 17 kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle 8.7 kur
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Projeyi aç
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -f deniz_gizem_rotam_android_final_v6.zip
+          mkdir -p project
+          unzip -q deniz_gizem_rotam_android_final_v6.zip -d project
+
+      - name: APK oluştur
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x project/gradlew
+          cd project
+          ./gradlew assembleDebug --stacktrace --no-daemon
+
+      - name: APK dosyasını yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: DenizGizemRotam-v6-debug-apk
+          path: project/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
